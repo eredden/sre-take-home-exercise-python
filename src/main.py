@@ -12,22 +12,21 @@ def load_config(file_path):
 # Function to perform health checks
 def check_health(endpoint):
     url = endpoint['url']
-    method = endpoint.get('method')
+    method = endpoint.get('method', 'GET')
     headers = endpoint.get('headers')
     body = endpoint.get('body')
-
-    if not method:
-        method = "GET"
 
     try:
         response = requests.request(method, url, headers=headers, json=body)
         if 200 <= response.status_code < 300 and response.elapsed < timedelta(milliseconds=500):
             # DEBUGGING OUTPUT.
             print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
+
             return "UP"
         else:
             # DEBUGGING OUTPUT.
             print(f"\x1b[31mDOWN: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
+
             return "DOWN"
     except requests.RequestException:
         return "DOWN"
