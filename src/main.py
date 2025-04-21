@@ -17,7 +17,10 @@ def check_health(endpoint):
     body = endpoint.get('body')
 
     try:
-        response = requests.request(method, url, headers=headers, json=body)
+        response = requests.request(method, url, headers=headers, data=body)
+        # DEBUGGING OUTPUT.
+        print(f"requests.request('{method}', '{url}', headers={headers}, json={body})")
+
         if 200 <= response.status_code < 300 and response.elapsed < timedelta(milliseconds=500):
             # DEBUGGING OUTPUT.
             print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
@@ -47,9 +50,10 @@ def monitor_endpoints(file_path):
 
         # Log cumulative availability percentages
         for domain, stats in domain_stats.items():
-            availability = round(100 * stats["up"] / stats["total"])
-            print(f"{domain} has {availability}% availability percentage")
-
+            availability = round((stats["up"] / stats["total"]) * 100)
+            print(f"{domain} has {availability}% availability percentage.")
+        
+        print(f"The timestamp is {time.strftime("%Y/%m/%d %H:%M:%S")}.")
         print("---")
         time.sleep(15)
 
