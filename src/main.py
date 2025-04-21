@@ -1,6 +1,7 @@
 import yaml
 import requests
 import time
+from datetime import timedelta
 from collections import defaultdict
 
 # Function to load configuration from the YAML file
@@ -20,13 +21,13 @@ def check_health(endpoint):
 
     try:
         response = requests.request(method, url, headers=headers, json=body)
-        if 200 <= response.status_code < 300:
+        if 200 <= response.status_code < 300 and response.elapsed < timedelta(milliseconds=500):
             # DEBUGGING OUTPUT.
-            print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body}\x1b[0m\n")
+            print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
             return "UP"
         else:
             # DEBUGGING OUTPUT.
-            print(f"\x1b[31mDOWN: {method} {url} {response.status_code} {headers} {body}\x1b[0m\n")
+            print(f"\x1b[31mDOWN: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
             return "DOWN"
     except requests.RequestException:
         return "DOWN"
