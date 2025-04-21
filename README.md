@@ -36,7 +36,7 @@ Prior to running this program, download its dependencies by running the followin
 pip install -r requirements.txt
 ```
 
-In the same directory, you may execute this program by running the following in a command-line interface of your choice with [Python installed](https://wiki.python.org/moin/BeginnersGuide/Download) and on the PATH:
+Once you navigate down to the `src` directory, you may execute this program by running the following in a command-line interface of your choice with [Python installed](https://wiki.python.org/moin/BeginnersGuide/Download) and on the PATH:
 ```
 python monitor.py <config_file_path>
 ```
