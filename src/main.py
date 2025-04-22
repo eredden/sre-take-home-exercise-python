@@ -1,5 +1,6 @@
+import asyncio
+import aiohttp
 import yaml
-import requests
 import time
 from datetime import timedelta
 from collections import defaultdict
@@ -10,42 +11,41 @@ def load_config(file_path):
         return yaml.safe_load(file)
 
 # Function to perform health checks
-# TODO: Implement asynchronous requests.
-def check_health(endpoint):
+async def check_health(endpoint):
     url = endpoint['url']
     method = endpoint.get('method', 'GET')
     headers = endpoint.get('headers', None)
     body = endpoint.get('body', None)
 
     try:
-        response = requests.request(method, url, headers=headers, data=body, timeout=0.5)
+        async with aiohttp.ClientSession() as session:
+            response = await session.request(method, url, headers=headers, data=body, timeout=0.5)
 
-        if 200 <= response.status_code < 300:
-            # DEBUGGING OUTPUT.
-            print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m")
-
-            return "UP"
-        else:
-            # DEBUGGING OUTPUT.
-            print(f"\x1b[31mDOWN: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m")
-
-            return "DOWN"
-    except requests.RequestException:
+            if 200 <= response.status < 300:
+                return "UP"
+            else:
+                return "DOWN"
+            
+    except Exception:
         return "DOWN"
 
 # Main function to monitor endpoints
-def monitor_endpoints(file_path):
+async def monitor_endpoints(file_path):
     config = load_config(file_path)
     domain_stats = defaultdict(lambda: {"up": 0, "total": 0})
 
-    while True:
-        for endpoint in config:
-            domain = endpoint["url"].split("//")[-1].split("/")[0].split(":")[0]
-            result = check_health(endpoint)
+    # Update the domain statistics with availability data from one endpoint
+    async def update_domain_stats(endpoint):
+        domain = endpoint["url"].split("//")[-1].split("/")[0].split(":")[0]
+        result = await check_health(endpoint)
 
-            domain_stats[domain]["total"] += 1
-            if result == "UP":
-                domain_stats[domain]["up"] += 1
+        domain_stats[domain]["total"] += 1
+        if result == "UP":
+            domain_stats[domain]["up"] += 1
+
+    while True:
+        tasks = [update_domain_stats(endpoint) for endpoint in config]
+        await asyncio.gather(*tasks)
 
         # Log cumulative availability percentages
         for domain, stats in domain_stats.items():
@@ -66,6 +66,6 @@ if __name__ == "__main__":
 
     config_file = sys.argv[1]
     try:
-        monitor_endpoints(config_file)
+        asyncio.run(monitor_endpoints(config_file))
     except KeyboardInterrupt:
         print("\nMonitoring stopped by user.")
