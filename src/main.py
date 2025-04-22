@@ -10,25 +10,24 @@ def load_config(file_path):
         return yaml.safe_load(file)
 
 # Function to perform health checks
+# TODO: Implement asynchronous requests.
 def check_health(endpoint):
     url = endpoint['url']
     method = endpoint.get('method', 'GET')
-    headers = endpoint.get('headers')
-    body = endpoint.get('body')
+    headers = endpoint.get('headers', None)
+    body = endpoint.get('body', None)
 
     try:
-        response = requests.request(method, url, headers=headers, data=body)
-        # DEBUGGING OUTPUT.
-        print(f"requests.request('{method}', '{url}', headers={headers}, json={body})")
+        response = requests.request(method, url, headers=headers, data=body, timeout=0.5)
 
-        if 200 <= response.status_code < 300 and response.elapsed < timedelta(milliseconds=500):
+        if 200 <= response.status_code < 300:
             # DEBUGGING OUTPUT.
-            print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
+            print(f"\x1b[32mUP: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m")
 
             return "UP"
         else:
             # DEBUGGING OUTPUT.
-            print(f"\x1b[31mDOWN: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m\n")
+            print(f"\x1b[31mDOWN: {method} {url} {response.status_code} {headers} {body} {response.elapsed}\x1b[0m")
 
             return "DOWN"
     except requests.RequestException:
@@ -41,7 +40,7 @@ def monitor_endpoints(file_path):
 
     while True:
         for endpoint in config:
-            domain = endpoint["url"].split("//")[-1].split("/")[0]
+            domain = endpoint["url"].split("//")[-1].split("/")[0].split(":")[0]
             result = check_health(endpoint)
 
             domain_stats[domain]["total"] += 1
